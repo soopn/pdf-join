@@ -1,7 +1,7 @@
 {
   "target-folder": "./targets/",
 
-  "targets": ["KCH Code of Conduct 2025.pdf", "KCH Fees and Charges List 2025.pdf", "KCH House Rules 2025.pdf"],
+  "targets": [""],
 
   "output": "Lorem Ipsum.pdf",
 

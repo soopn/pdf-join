@@ -13,8 +13,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 pdfmetrics.registerFont(TTFont("Arial", "arial.ttf"))
 pdfmetrics.registerFont(TTFont("Arial-Bold", "arialbd.ttf"))
 
-# TODO: page number location, font, font size
-# TODO: have targets be indescriminate of .pdf extension
+# TODO: could get rid of printing to stderr
 
 DEFAULT_MANIFEST_PATH = "./manifest.json"
 FONT = "Arial"
@@ -71,22 +70,14 @@ def check_all_files_used(directory_path: str, targets):
     # checking if all files found in dir
     targetPath = Path(directory_path)
     files = [p for p in targetPath.rglob("*.pdf") if p.is_file()]
+
     for file in files:
         if file.name not in targets:
             print(f"NOTE: {file.name} not assigned to current operation")
     del targetPath
 
 
-if __name__ == "__main__":
-    manifestPath = DEFAULT_MANIFEST_PATH
-
-    if len(sys.argv) > 2:
-        print(ERR_USAGE, file=sys.stderr)
-        _exit(-1)
-
-    elif len(sys.argv) == 2:
-        manifestPath = sys.argv[1]
-
+def load_manifest():
     try:
         with open(manifestPath, "r") as file:
             data = json.load(file)
@@ -94,48 +85,118 @@ if __name__ == "__main__":
     except FileNotFoundError:
         print(ERR_NO_MANIFEST, file=sys.stderr)
         _exit(-1)
+    return data
 
-    # TODO: check for output filename
-    # TODO: check for page number location
-    # TODO: check for font
-    # TODO: check for font size
 
-    if "targets" not in data or "target-folder" not in data:
+def verify_manifest(manifest):
+    if "targets" not in manifest or "target-folder" not in manifest:
         print(ERR_BAD_FORMAT, file=sys.stderr)
         _exit(-1)
-    elif len(data["targets"]) < 1:
+
+    if len(manifest["targets"]) < 1:
         print(ERR_EMPTY_MANIFEST, file=sys.stderr)
         _exit(-1)
 
-    #! everything here works atp!#
-    targetFolder = data["target-folder"]
+    if "output-file" not in manifest:
+        print("Error: No output file specified")
 
-    targets = data["targets"]
+    if "font" not in manifest:
+        print("NOTE: No font specified, defaulting to Arial-Bold")
+
+    if "font-size" not in manifest:
+        print("NOTE: No font size specified, defaulting to 18pt")
+
+    if "page-number-location" not in manifest:
+        print("NOTE: No location specified, defaulting to top-right")
+
     if (
-        type(targetFolder) is not str
-        or type(targets) is not list
-        or not 1 < len(targets)
+        type(data["target-folder"]) is not str
+        or type(data["targets"]) is not list
+        or not 1 < len(data[targets])
     ):
         print(ERR_BAD_FORMAT, file=sys.stderr)
         _exit(-1)
 
-    check_all_files_used(data["target-folder"], targets)
-    targets = [targetFolder + o for o in targets]
 
-    # TODO: check if all target files are found
-    # TODO: maybe check if all files in directory are mentioned in manifest
+def format_file_list(files, toProcess, order):
+    string_builder = ""
+
+    for i in range(toProcess):
+        string_builder += f"""{i}. {files[i]}\n"""
+
+    string_builder += ", ".join(order) + "\n"
+    return string_builder
+
+
+def prompt_create_manifest():
+    # TODO: prompt to make new manifest
+    # prompt order of merging
+    valid = False
+
+    while not valid:
+        choice = input(
+            """Manifest not found, would you like to create one?\n1. Create new manifest\n2. Exit program\n"""
+        )
+        if choice == "1":
+            valid = True
+        elif choice == "2":
+            exit(0)
+
+    targetDir = input(
+        f"""Please designate path to target pdf files\n{Path.cwd()}\\"""
+    )
+
+    files = [p.name for p in Path(targetDir).rglob("*.pdf") if p.is_file()]
+    targets = []
+    targetDir = str(Path.cwd()) + "\\" + targetDir + "\\"
+
+    toProcess = len(files)
+    while toProcess > 1:
+        prompt = f"""Please designate the order of the files you would like to merge\n{format_file_list(files, toProcess, targets)}"""
+
+        target = input(prompt)
+        if not int(target) in range(toProcess):
+            continue
+
+        targets.append(targetDir + files[int(target)])
+        toProcess -= 1
+
+    output = input(
+        f"Please designate an output file (without the .pdf)\n{Path.cwd()}\\"
+    )
+
+    output = str(Path.cwd()) + "\\" + output + ".pdf"
+
+    return (targetDir, targets, output)
+
+
+if __name__ == "__main__":
+    manifestPath = DEFAULT_MANIFEST_PATH
+
+    if not Path("manifest.json").exists():
+        (targetFolder, targets, outputFile) = prompt_create_manifest()
+        OUTPUT_FILE = outputFile
+    else:
+        data = load_manifest()
+        verify_manifest(data)
+
+        #! everything here works atp!#
+        targetFolder = data["target-folder"]
+        targets = data["targets"]
+
+        check_all_files_used(data["target-folder"], targets)
+
+        # add target directory to filename
+        targets = [targetFolder + o for o in targets]
 
     writer = PdfWriter()
 
     pdfs = [PdfReader(file) for file in targets]
-    # pgCount = 0
     pageNum = 1
 
     for reader in pdfs:
 
         pages = reader.pages
-        # pgCount += len(pages)
-
         for page in pages:
             overlay = write_page_nums(pageNum)
             page.merge_page(overlay)
