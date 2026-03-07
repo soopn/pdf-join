@@ -3,12 +3,12 @@ import json
 from os import _exit
 import sys
 from pypdf import PdfWriter, PdfReader
+from pathlib import Path
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from pathlib import Path
-from utilities import *
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from utilities import *
 
 pdfmetrics.registerFont(TTFont("Arial", "arial.ttf"))
 pdfmetrics.registerFont(TTFont("Arial-Bold", "arialbd.ttf"))
