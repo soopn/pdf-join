@@ -14,6 +14,7 @@ pdfmetrics.registerFont(TTFont("Arial", "arial.ttf"))
 pdfmetrics.registerFont(TTFont("Arial-Bold", "arialbd.ttf"))
 
 # TODO: could get rid of printing to stderr
+# TODO: make it rewrite the manifest
 
 DEFAULT_MANIFEST_PATH = "./manifest.json"
 FONT = "Arial"
@@ -33,9 +34,6 @@ null    |   None
 int     |   int
 
 """
-
-# def parse_json() -> dict[str, str]:
-#     pass
 
 
 def count_pages(pdfs: list[PdfReader]) -> int:
@@ -110,9 +108,9 @@ def verify_manifest(manifest):
         print("NOTE: No location specified, defaulting to top-right")
 
     if (
-        type(data["target-folder"]) is not str
-        or type(data["targets"]) is not list
-        or not 1 < len(data[targets])
+        type(manifest["target-folder"]) is not str
+        or type(manifest["targets"]) is not list
+        or not 1 < len(manifest["targets"])
     ):
         print(ERR_BAD_FORMAT, file=sys.stderr)
         _exit(-1)
@@ -129,8 +127,7 @@ def format_file_list(files, toProcess, order):
 
 
 def prompt_create_manifest():
-    # TODO: prompt to make new manifest
-    # prompt order of merging
+    # BUG: \targets is broken
     valid = False
 
     while not valid:
@@ -191,6 +188,7 @@ if __name__ == "__main__":
 
     writer = PdfWriter()
 
+    # print(targets)
     pdfs = [PdfReader(file) for file in targets]
     pageNum = 1
 
