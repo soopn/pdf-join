@@ -1,0 +1,15 @@
+{
+  "target-folder": "./targets/",
+
+  "targets": ["KCH Code of Conduct 2025.pdf", "KCH Fees and Charges List 2025.pdf", "KCH House Rules 2025.pdf"],
+
+  "output": "Lorem Ipsum.pdf",
+
+  "font": "Arial",
+
+  "bold": true,
+
+  "font-size": 18,
+
+  "page-number-location": "top-right"
+}
