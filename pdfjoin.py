@@ -127,7 +127,6 @@ def format_file_list(files, toProcess, order):
 
 
 def prompt_create_manifest():
-    # BUG: \targets is broken
     valid = False
 
     while not valid:
@@ -156,11 +155,15 @@ def prompt_create_manifest():
             continue
 
         targets.append(targetDir + files[int(target)])
+        files.remove(files[int(target)])
         toProcess -= 1
 
     output = input(
         f"Please designate an output file (without the .pdf)\n{Path.cwd()}\\"
     )
+
+    # append the last file in the buffer
+    targets.append(targetDir + files[0])
 
     output = str(Path.cwd()) + "\\" + output + ".pdf"
 
